@@ -1,33 +1,134 @@
 @model MediStock.Web.Models.DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
+    var dailyJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.DailyRevenue.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), revenue = d.Revenue }));
+    bool showInventory = Model.IsAdmin || Model.IsPharmacist;
+    bool showRevenue = Model.IsAdmin || Model.IsCashier;
 }
 
-<div class="container py-4">
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h1 class="card-title h3">Welcome, @Model.FullName</h1>
-            <p class="text-muted mb-2">@Model.Email</p>
-            <p class="mb-3">
-                You are signed in as
-                @if (Model.Roles.Any())
+<div class="d-flex justify-content-between align-items-end mb-3">
+    <div>
+        <h1 class="h3 mb-0">Welcome, @Model.FullName</h1>
+        <small class="text-muted">@Model.Email &middot; @string.Join(", ", Model.Roles)</small>
+    </div>
+    <small class="text-muted">@DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm") UTC</small>
+</div>
+
+<partial name="_Toasts" />
+
+<div class="row g-3 mb-3">
+    @if (showRevenue)
+    {
+        <div class="col-md-3"><div class="card shadow-sm bg-success-subtle"><div class="card-body">
+            <div class="text-muted small">Today's revenue (UGX)</div>
+            <div class="h3 mb-0 text-success">@Model.TodayRevenue.ToString("N0")</div>
+        </div></div></div>
+        <div class="col-md-3"><div class="card shadow-sm"><div class="card-body">
+            <div class="text-muted small">Transactions today</div>
+            <div class="h3 mb-0">@Model.TodayTransactions</div>
+        </div></div></div>
+    }
+    @if (showInventory)
+    {
+        <div class="col-md-3"><div class="card shadow-sm @(Model.LowStockCount > 0 ? "bg-warning-subtle" : "")"><div class="card-body">
+            <div class="text-muted small">Drugs at/below reorder</div>
+            <div class="h3 mb-0 @(Model.LowStockCount > 0 ? "text-warning" : "")">@Model.LowStockCount</div>
+            <a class="small" asp-controller="Drugs" asp-action="Index">view inventory →</a>
+        </div></div></div>
+        <div class="col-md-3"><div class="card shadow-sm @(Model.ExpiringSoonCount > 0 ? "bg-danger-subtle" : "")"><div class="card-body">
+            <div class="text-muted small">Batches expiring &lt; 30d</div>
+            <div class="h3 mb-0 @(Model.ExpiringSoonCount > 0 ? "text-danger" : "")">@Model.ExpiringSoonCount</div>
+            <a class="small" asp-controller="Batches" asp-action="Index">view batches →</a>
+        </div></div></div>
+    }
+</div>
+
+@if (showRevenue && Model.DailyRevenue.Any())
+{
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header"><strong>Daily revenue — last 30 days</strong></div>
+                <div class="card-body"><canvas id="revenueChart" height="100"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header"><strong>Top 5 drugs today</strong></div>
+                @if (Model.TopDrugsToday.Any())
                 {
-                    @:<strong>@string.Join(", ", Model.Roles)</strong>.
+                    <ul class="list-group list-group-flush">
+                        @foreach (var d in Model.TopDrugsToday)
+                        {
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>@d.DrugName</span>
+                                <span class="text-muted">@d.QuantitySold u &middot; UGX @d.Revenue.ToString("N0")</span>
+                            </li>
+                        }
+                    </ul>
                 }
                 else
                 {
-                    @:a user (no roles assigned).
+                    <div class="card-body text-muted">No sales recorded yet today.</div>
                 }
-            </p>
-            <p class="text-muted small mb-0">
-                MediStock — Pharmacy Inventory, Prescription, and Sales Management.
-            </p>
+            </div>
         </div>
     </div>
+}
 
-    <div class="mt-3">
-        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
-            <button type="submit" class="btn btn-outline-secondary">Sign out</button>
-        </form>
+<div class="card shadow-sm mt-3">
+    <div class="card-header d-flex justify-content-between">
+        <strong>@(Model.IsCashier && !Model.IsAdmin ? "My recent receipts" : "Recent sales")</strong>
+        @if (Model.IsAdmin)
+        {
+            <a class="small" asp-controller="Sales" asp-action="Index">all sales →</a>
+        }
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead class="table-light">
+                <tr><th>Receipt</th><th>Date</th><th>Cashier</th><th>Customer</th><th class="text-end">Total</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.RecentSales)
+                {
+                    <tr class="@(s.IsVoided ? "text-muted" : "")">
+                        <td>@s.ReceiptNumber</td>
+                        <td>@s.CompletedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@s.CashierName</td>
+                        <td>@(s.CustomerName ?? "Walk-in")</td>
+                        <td class="text-end @(s.IsVoided ? "text-decoration-line-through" : "")">@s.Total.ToString("N0")</td>
+                        <td>@(s.IsVoided ? "Voided" : "OK")</td>
+                    </tr>
+                }
+                @if (!Model.RecentSales.Any())
+                { <tr><td colspan="6" class="text-center text-muted py-3">No sales recorded yet.</td></tr> }
+            </tbody>
+        </table>
     </div>
 </div>
+
+@section Scripts {
+    @if (showRevenue && Model.DailyRevenue.Any())
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+        <script>
+            const daily = @Html.Raw(dailyJson);
+            new Chart(document.getElementById('revenueChart'), {
+                type: 'line',
+                data: {
+                    labels: daily.map(d => d.date),
+                    datasets: [{
+                        label: 'Revenue (UGX)',
+                        data: daily.map(d => d.revenue),
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13,110,253,0.1)',
+                        tension: 0.2, fill: true
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        </script>
+    }
+}

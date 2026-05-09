@@ -1,0 +1,163 @@
+@model MediStock.Web.Models.ReportsIndexViewModel
+@{
+    ViewData["Title"] = "Reports";
+    var dailyJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.DailyRevenue.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), revenue = d.Revenue, txns = d.TransactionCount }));
+    var topDrugsJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.TopDrugs.Select(t => new { name = t.DrugName, revenue = t.Revenue, qty = t.QuantitySold }));
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Reports — @Model.From.ToString("MMM yyyy")</h1>
+    <div>
+        <a class="btn btn-outline-primary btn-sm" asp-action="Sales" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")">Sales report</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3"><div class="card shadow-sm"><div class="card-body">
+        <div class="text-muted small">Stock valuation (cost)</div>
+        <div class="h4 mb-0">UGX @Model.StockValuation.TotalValue.ToString("N0")</div>
+        <div class="text-muted small">@Model.StockValuation.TotalUnits unit@(Model.StockValuation.TotalUnits == 1 ? "" : "s") on hand</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm"><div class="card-body">
+        <div class="text-muted small">Top drug this month</div>
+        <div class="h6 mb-0">@(Model.TopDrugs.FirstOrDefault()?.DrugName ?? "—")</div>
+        <div class="text-muted small">@(Model.TopDrugs.FirstOrDefault()?.Revenue.ToString("N0") ?? "0") UGX</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm"><div class="card-body">
+        <div class="text-muted small">Top supplier (spend)</div>
+        <div class="h6 mb-0">@(Model.SupplierSpend.FirstOrDefault()?.SupplierName ?? "—")</div>
+        <div class="text-muted small">@(Model.SupplierSpend.FirstOrDefault()?.TotalSpend.ToString("N0") ?? "0") UGX</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm"><div class="card-body">
+        <div class="text-muted small">Categories tracked</div>
+        <div class="h4 mb-0">@Model.StockValuation.ByCategory.Count</div>
+    </div></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8"><div class="card shadow-sm">
+        <div class="card-header"><strong>Daily revenue — last 30 days</strong></div>
+        <div class="card-body"><canvas id="revenueChart" height="100"></canvas></div>
+    </div></div>
+    <div class="col-lg-4"><div class="card shadow-sm">
+        <div class="card-header"><strong>Top drugs — this month (revenue)</strong></div>
+        <div class="card-body"><canvas id="topDrugsChart" height="200"></canvas></div>
+    </div></div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-lg-6"><div class="card shadow-sm">
+        <div class="card-header"><strong>Profit margin — this month (top 20)</strong></div>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0 align-middle">
+                <thead class="table-light">
+                    <tr><th>Drug</th><th class="text-end">Qty</th><th class="text-end">Revenue</th><th class="text-end">Cost</th><th class="text-end">Profit</th><th class="text-end">Margin %</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.ProfitMargin)
+                    {
+                        <tr>
+                            <td>@r.DrugName</td>
+                            <td class="text-end">@r.Quantity</td>
+                            <td class="text-end">@r.Revenue.ToString("N0")</td>
+                            <td class="text-end">@r.Cost.ToString("N0")</td>
+                            <td class="text-end @(r.Profit < 0 ? "text-danger" : "text-success")">@r.Profit.ToString("N0")</td>
+                            <td class="text-end">@r.MarginPct.ToString("F1")%</td>
+                        </tr>
+                    }
+                    @if (!Model.ProfitMargin.Any())
+                    { <tr><td colspan="6" class="text-center text-muted py-3">No sales this month yet.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div></div>
+
+    <div class="col-lg-6"><div class="card shadow-sm">
+        <div class="card-header"><strong>Supplier spend — this month</strong></div>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0 align-middle">
+                <thead class="table-light">
+                    <tr><th>Supplier</th><th class="text-end">Batches</th><th class="text-end">Units</th><th class="text-end">Spend</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.SupplierSpend)
+                    {
+                        <tr>
+                            <td>@r.SupplierName</td>
+                            <td class="text-end">@r.BatchCount</td>
+                            <td class="text-end">@r.UnitsReceived</td>
+                            <td class="text-end">UGX @r.TotalSpend.ToString("N0")</td>
+                        </tr>
+                    }
+                    @if (!Model.SupplierSpend.Any())
+                    { <tr><td colspan="4" class="text-center text-muted py-3">No supplier purchases this month.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div></div>
+</div>
+
+<div class="card shadow-sm mt-3">
+    <div class="card-header"><strong>Stock valuation by category</strong></div>
+    <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead class="table-light">
+                <tr><th>Category</th><th class="text-end">Units</th><th class="text-end">Value (UGX)</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model.StockValuation.ByCategory)
+                {
+                    <tr>
+                        <td>@c.CategoryName</td>
+                        <td class="text-end">@c.UnitsOnHand</td>
+                        <td class="text-end">@c.Value.ToString("N0")</td>
+                    </tr>
+                }
+                <tr class="fw-bold table-light">
+                    <td>Total</td>
+                    <td class="text-end">@Model.StockValuation.TotalUnits</td>
+                    <td class="text-end">@Model.StockValuation.TotalValue.ToString("N0")</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    const daily = @Html.Raw(dailyJson);
+    const topDrugs = @Html.Raw(topDrugsJson);
+
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'line',
+        data: {
+            labels: daily.map(d => d.date),
+            datasets: [{
+                label: 'Revenue (UGX)',
+                data: daily.map(d => d.revenue),
+                borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,0.1)',
+                tension: 0.2, fill: true
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    new Chart(document.getElementById('topDrugsChart'), {
+        type: 'bar',
+        data: {
+            labels: topDrugs.map(d => d.name),
+            datasets: [{
+                label: 'Revenue (UGX)',
+                data: topDrugs.map(d => d.revenue),
+                backgroundColor: '#198754'
+            }]
+        },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+    });
+})();
+</script>
+}

@@ -100,10 +100,9 @@
             @if (canSee("reports"))
             {
                 <li class="nav-item">
-                    <span class="nav-link text-muted disabled" title="Available in Phase 4">
+                    <a class="nav-link @CurrentClass("Reports") text-dark" asp-controller="Reports" asp-action="Index">
                         <span class="me-2">⌬</span> Reports
-                        <span class="badge bg-secondary ms-1">soon</span>
-                    </span>
+                    </a>
                 </li>
             }
 

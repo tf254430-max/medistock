@@ -70,7 +70,10 @@ builder.Services.AddScoped<IReceiptPdfService, ReceiptPdfService>();
 builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
+builder.Services.AddScoped<IReportingService, ReportingService>();
 builder.Services.AddSingleton<IReceiptNumberGenerator, SqliteReceiptNumberGenerator>();
+builder.Services.AddSingleton<INotificationCache, NotificationCache>();
+builder.Services.AddHostedService<NotificationRefreshService>();
 
 builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");
 

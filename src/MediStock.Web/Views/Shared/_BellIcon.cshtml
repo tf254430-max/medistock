@@ -1,0 +1,65 @@
+@using MediStock.Application.Interfaces
+@inject INotificationCache Cache
+@{
+    var snap = Cache.Current;
+    var total = snap.Total;
+}
+
+<li class="nav-item dropdown me-2">
+    <a class="nav-link position-relative" href="#" id="bellMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Inventory alerts">
+        <span aria-hidden="true">🔔</span>
+        @if (total > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.65rem;">@total</span>
+        }
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="bellMenu" style="width:340px; max-height:420px; overflow-y:auto">
+        <li class="px-3 py-2 d-flex justify-content-between border-bottom">
+            <strong>Inventory alerts</strong>
+            <small class="text-muted">@(snap.LastRefreshedAt == DateTime.MinValue ? "(refreshing...)" : snap.LastRefreshedAt.ToString("HH:mm"))</small>
+        </li>
+
+        @if (snap.LowStock.Any())
+        {
+            <li class="px-3 pt-2 small text-uppercase text-muted">Low stock</li>
+            @foreach (var d in snap.LowStock.Take(8))
+            {
+                <li>
+                    <a class="dropdown-item d-flex justify-content-between" asp-controller="Drugs" asp-action="Details" asp-route-id="@d.DrugId">
+                        <span>@d.DrugName <small class="text-muted">@d.CategoryName</small></span>
+                        <span class="text-warning">@d.CurrentStock / @d.ReorderLevel</span>
+                    </a>
+                </li>
+            }
+            @if (snap.LowStock.Count > 8)
+            {
+                <li class="px-3 small text-muted">… and @(snap.LowStock.Count - 8) more</li>
+            }
+        }
+
+        @if (snap.ExpiringSoon.Any())
+        {
+            <li class="px-3 pt-2 small text-uppercase text-muted">Expiring &lt; 30 days</li>
+            @foreach (var b in snap.ExpiringSoon.Take(8))
+            {
+                <li>
+                    <a class="dropdown-item d-flex justify-content-between" asp-controller="Batches" asp-action="Details" asp-route-id="@b.BatchId">
+                        <span>@b.DrugName <small class="text-muted">@b.BatchNumber</small></span>
+                        <span class="text-danger">@b.DaysUntilExpiry d</span>
+                    </a>
+                </li>
+            }
+            @if (snap.ExpiringSoon.Count > 8)
+            {
+                <li class="px-3 small text-muted">… and @(snap.ExpiringSoon.Count - 8) more</li>
+            }
+        }
+
+        @if (total == 0)
+        {
+            <li class="px-3 py-3 text-center text-muted">All clear. No active alerts.</li>
+        }
+
+        <li class="px-3 py-2 border-top small text-muted">Refreshed by background service every 6 hours (FR-NTF-04).</li>
+    </ul>
+</li>

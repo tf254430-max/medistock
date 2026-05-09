@@ -31,6 +31,12 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-flex justify-content-between" id="topNav">
                     <ul class="navbar-nav flex-grow-1"></ul>
+                    <ul class="navbar-nav d-flex align-items-center">
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <partial name="_BellIcon" />
+                        }
+                    </ul>
                     <partial name="_LoginPartial" />
                 </div>
             </div>

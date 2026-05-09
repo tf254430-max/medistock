@@ -1,0 +1,66 @@
+@model MediStock.Application.Dtos.SaleDetailDto
+@{
+    ViewData["Title"] = $"Sale — {Model.ReceiptNumber}";
+    bool canVoid = !Model.IsVoided && (DateTime.UtcNow - Model.CompletedAt).TotalMinutes <= 30;
+}
+
+<partial name="_Toasts" />
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h1 class="h4 mb-1">Receipt @Model.ReceiptNumber</h1>
+                <div class="text-muted">@Model.CompletedAt.ToString("yyyy-MM-dd HH:mm") UTC &middot; Cashier: @Model.CashierName &middot; @(Model.CustomerName ?? "Walk-in")</div>
+                @if (Model.IsVoided)
+                {
+                    <span class="badge bg-danger-subtle text-danger mt-1">VOIDED on @Model.VoidedAt?.ToString("yyyy-MM-dd HH:mm") by @Model.VoidedByName</span>
+                    @if (!string.IsNullOrEmpty(Model.VoidReason))
+                    { <div class="small text-muted mt-1">Reason: @Model.VoidReason</div> }
+                }
+            </div>
+            <div>
+                <a class="btn btn-primary btn-sm" asp-action="Receipt" asp-route-id="@Model.Id" target="_blank">Open PDF</a>
+                @if (canVoid)
+                {
+                    <a class="btn btn-outline-danger btn-sm" asp-action="Void" asp-route-id="@Model.Id">Void</a>
+                }
+                <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back</a>
+            </div>
+        </div>
+
+        <hr />
+
+        <table class="table table-sm">
+            <thead><tr><th>Drug</th><th>Batch</th><th class="text-end">Qty</th><th class="text-end">Unit (UGX)</th><th class="text-end">Line total (UGX)</th></tr></thead>
+            <tbody>
+                @foreach (var l in Model.Lines)
+                {
+                    <tr>
+                        <td>@l.DrugName</td>
+                        <td>@l.BatchNumber</td>
+                        <td class="text-end">@l.Quantity</td>
+                        <td class="text-end">@l.UnitPrice.ToString("N0")</td>
+                        <td class="text-end">@l.LineTotal.ToString("N0")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="row mt-3">
+            <div class="col-md-6 small text-muted">
+                Payment: <strong>@Model.PaymentMethod</strong>
+                @if (!string.IsNullOrEmpty(Model.MobileMoneyRef))
+                { <span>&middot; Ref: @Model.MobileMoneyRef</span> }
+            </div>
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-6 text-end">Subtotal</dt><dd class="col-6 text-end">UGX @Model.SubTotal.ToString("N0")</dd>
+                    <dt class="col-6 text-end">Discount</dt><dd class="col-6 text-end">-UGX @Model.Discount.ToString("N0")</dd>
+                    <dt class="col-6 text-end">VAT (18%)</dt><dd class="col-6 text-end">UGX @Model.VatAmount.ToString("N0")</dd>
+                    <dt class="col-6 text-end fs-5">Total</dt><dd class="col-6 text-end fs-5 fw-bold">UGX @Model.Total.ToString("N0")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

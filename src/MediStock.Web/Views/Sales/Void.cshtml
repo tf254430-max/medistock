@@ -1,0 +1,36 @@
+@model MediStock.Web.Models.VoidSaleViewModel
+@{
+    ViewData["Title"] = $"Void {Model.ReceiptNumber}";
+}
+
+<h1 class="h4 mb-3">Void receipt @Model.ReceiptNumber</h1>
+
+<div class="alert alert-warning">
+    Voiding a sale reverses all stock movements and marks the receipt as voided.
+    This action is logged in the audit trail and cannot be undone. Re-enter your admin password to proceed.
+</div>
+
+<form method="post" asp-action="Void" class="card shadow-sm">
+    <input type="hidden" asp-for="SaleId" />
+    <input type="hidden" asp-for="ReceiptNumber" />
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="Reason" class="form-label">Reason</label>
+            <textarea asp-for="Reason" class="form-control" rows="3" required></textarea>
+            <span asp-validation-for="Reason" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="AdminPassword" class="form-label">Confirm your admin password</label>
+            <input asp-for="AdminPassword" class="form-control" type="password" required autofocus />
+            <span asp-validation-for="AdminPassword" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.SaleId">Cancel</a>
+        <button type="submit" class="btn btn-danger">Void sale</button>
+    </div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -40,10 +40,15 @@
             @if (canSee("till"))
             {
                 <li class="nav-item">
-                    <span class="nav-link text-muted disabled" title="Available in Phase 3">
+                    <a class="nav-link @CurrentClass("Sales") text-dark" asp-controller="Sales" asp-action="Till">
                         <span class="me-2">$</span> Till (POS)
-                        <span class="badge bg-secondary ms-1">soon</span>
-                    </span>
+                    </a>
+                    @if (isAdmin)
+                    {
+                        <a class="nav-link text-dark ps-4 small" asp-controller="Sales" asp-action="Index">
+                            All sales
+                        </a>
+                    }
                 </li>
             }
 

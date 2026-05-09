@@ -1,0 +1,345 @@
+@model MediStock.Web.Models.TillViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    ViewData["Title"] = "Till (POS)";
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-0">Till</h1>
+        <small class="text-muted">Cashier: <strong>@Model.CashierName</strong> &middot; All amounts in @Model.Currency</small>
+    </div>
+    <button type="button" class="btn btn-outline-secondary" id="btnNewSale" title="F2">F2: New sale</button>
+</div>
+
+<partial name="_Toasts" />
+
+<div id="alertHost"></div>
+<div id="prescriptionBanner" class="alert alert-info" role="alert" style="display:none"></div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <input type="search" id="drugSearch" class="form-control form-control-lg"
+                       placeholder="Type drug name, generic, or barcode — then Enter to add"
+                       autocomplete="off" autofocus />
+                <ul id="drugResults" class="list-group mt-2" style="display:none; max-height: 240px; overflow-y: auto;"></ul>
+            </div>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle" id="cartTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Drug</th>
+                            <th class="text-end" style="width:110px">Qty</th>
+                            <th class="text-end" style="width:120px">Unit (@Model.Currency)</th>
+                            <th class="text-end" style="width:130px">Line total</th>
+                            <th class="text-end" style="width:60px"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartBody">
+                        <tr id="cartEmpty"><td colspan="5" class="text-center text-muted py-4">Cart is empty. Search for a drug above.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white"><strong>Totals</strong></div>
+            <div class="card-body">
+                <dl class="row mb-2">
+                    <dt class="col-6">Subtotal</dt><dd class="col-6 text-end" id="subTotal">0</dd>
+                </dl>
+                <div class="mb-3">
+                    <label for="discount" class="form-label small">Discount (@Model.Currency)</label>
+                    <input type="number" id="discount" class="form-control form-control-sm" min="0" step="0.01" value="0" />
+                </div>
+                <dl class="row mb-2">
+                    <dt class="col-6">VAT (18%)</dt><dd class="col-6 text-end" id="vatAmount">0</dd>
+                    <dt class="col-6 fs-5">Total</dt><dd class="col-6 text-end fs-5 fw-bold" id="grandTotal">0</dd>
+                </dl>
+
+                <hr />
+
+                <div class="mb-2">
+                    <label class="form-label small">Payment method</label>
+                    <div class="btn-group w-100" role="group" aria-label="Payment method">
+                        <input type="radio" class="btn-check" name="payMethod" id="payCash" value="Cash" autocomplete="off" checked>
+                        <label class="btn btn-outline-primary" for="payCash">Cash</label>
+                        <input type="radio" class="btn-check" name="payMethod" id="payMtn" value="MtnMoMo" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="payMtn">MTN MoMo</label>
+                        <input type="radio" class="btn-check" name="payMethod" id="payAirtel" value="AirtelMoney" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="payAirtel">Airtel</label>
+                    </div>
+                </div>
+                <div class="mb-3" id="moMoRefBox" style="display:none;">
+                    <label for="moMoRef" class="form-label small">Mobile money ref</label>
+                    <input type="text" id="moMoRef" class="form-control form-control-sm" placeholder="e.g. MTN-220519.1234.A12345" />
+                </div>
+
+                <button type="button" class="btn btn-success btn-lg w-100" id="btnPay" title="F4" disabled>
+                    F4: Complete sale
+                </button>
+                <small class="text-muted d-block mt-2">Shortcuts: F2 new sale &middot; Enter add to cart &middot; F4 pay</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const csrfToken = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(token));
+    const checkoutUrl = '@Url.Action("Checkout", "Sales")';
+    const searchUrl = '/api/drugs/search';
+
+    const cart = []; // { drugId, name, strength, unitPrice, quantity, requiresPrescription, currentStock }
+    let currentPrescriptionId = null;
+
+    const $ = (id) => document.getElementById(id);
+    const fmt = (n) => Math.round(n).toLocaleString('en-US');
+
+    function debounce(fn, ms) {
+        let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+    }
+
+    function showAlert(kind, message) {
+        const host = $('alertHost');
+        host.innerHTML = `<div class="alert alert-${kind} alert-dismissible fade show" role="alert">
+            ${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+    }
+
+    function renderCart() {
+        const body = $('cartBody');
+        if (cart.length === 0) {
+            body.innerHTML = '<tr id="cartEmpty"><td colspan="5" class="text-center text-muted py-4">Cart is empty. Search for a drug above.</td></tr>';
+        } else {
+            body.innerHTML = cart.map((l, i) => `
+                <tr>
+                    <td><strong>${l.name}</strong> <small class="text-muted">${l.strength}</small>${l.requiresPrescription ? ' <span class="badge bg-info-subtle text-info">Rx</span>' : ''}</td>
+                    <td class="text-end">
+                        <input type="number" min="1" max="${l.currentStock}" value="${l.quantity}" data-i="${i}"
+                               class="form-control form-control-sm cart-qty text-end" style="width:90px; display:inline-block" />
+                    </td>
+                    <td class="text-end">${fmt(l.unitPrice)}</td>
+                    <td class="text-end">${fmt(l.unitPrice * l.quantity)}</td>
+                    <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger" data-rm="${i}">×</button></td>
+                </tr>`).join('');
+        }
+        recompute();
+    }
+
+    function recompute() {
+        const subtotal = cart.reduce((acc, l) => acc + l.unitPrice * l.quantity, 0);
+        const discount = Math.max(0, parseFloat($('discount').value || '0'));
+        const taxable = Math.max(0, subtotal - discount);
+        const vat = Math.round(taxable * 0.18);
+        const total = taxable + vat;
+        $('subTotal').textContent = fmt(subtotal);
+        $('vatAmount').textContent = fmt(vat);
+        $('grandTotal').textContent = fmt(total);
+        $('btnPay').disabled = cart.length === 0 || total <= 0;
+    }
+
+    function addToCart(drug, qty = 1) {
+        if (drug.currentStock <= 0) { showAlert('warning', `${drug.name} is out of stock.`); return; }
+        if (drug.requiresPrescription && !currentPrescriptionId) {
+            showAlert('warning', `${drug.name} requires a prescription. Open this drug from a prescription to dispense.`);
+            return;
+        }
+        const existing = cart.find(l => l.drugId === drug.id);
+        if (existing) {
+            if (existing.quantity + qty > drug.currentStock) { showAlert('warning', `Only ${drug.currentStock} in stock.`); return; }
+            existing.quantity += qty;
+        } else {
+            cart.push({
+                drugId: drug.id, name: drug.name, strength: drug.strength,
+                unitPrice: drug.unitPrice, quantity: qty,
+                requiresPrescription: drug.requiresPrescription, currentStock: drug.currentStock
+            });
+        }
+        renderCart();
+    }
+
+    const search = debounce(async (q) => {
+        const r = $('drugResults');
+        if (!q) { r.style.display = 'none'; r.innerHTML = ''; return; }
+        const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
+        if (!resp.ok) { r.style.display = 'none'; return; }
+        const data = await resp.json();
+        if (!data.length) { r.innerHTML = '<li class="list-group-item text-muted">No matches.</li>'; r.style.display = 'block'; return; }
+        r.innerHTML = data.map(d => `
+            <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                data-drug='${JSON.stringify(d).replace(/'/g, "&#39;")}'>
+                <div>
+                    <strong>${d.name}</strong> <span class="text-muted">${d.strength}</span>
+                    ${d.requiresPrescription ? '<span class="badge bg-info-subtle text-info ms-1">Rx</span>' : ''}
+                </div>
+                <div class="text-end small">
+                    <div>Stock: <strong class="${d.currentStock === 0 ? 'text-danger' : ''}">${d.currentStock}</strong></div>
+                    <div class="text-muted">${d.unitPrice ? d.unitPrice.toLocaleString() + ' UGX' : '—'}</div>
+                </div>
+            </li>`).join('');
+        r.style.display = 'block';
+    }, 200);
+
+    $('drugSearch').addEventListener('input', e => search(e.target.value));
+    $('drugSearch').addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const first = $('drugResults').querySelector('li[data-drug]');
+            if (first) {
+                const d = JSON.parse(first.dataset.drug);
+                addToCart(d, 1);
+                $('drugSearch').value = '';
+                $('drugResults').style.display = 'none';
+            }
+        } else if (e.key === 'Escape') {
+            $('drugResults').style.display = 'none';
+        }
+    });
+    $('drugResults').addEventListener('click', e => {
+        const li = e.target.closest('li[data-drug]');
+        if (!li) return;
+        const d = JSON.parse(li.dataset.drug);
+        addToCart(d, 1);
+        $('drugSearch').value = '';
+        $('drugSearch').focus();
+        $('drugResults').style.display = 'none';
+    });
+
+    $('cartBody').addEventListener('input', e => {
+        if (e.target.classList.contains('cart-qty')) {
+            const i = +e.target.dataset.i;
+            const v = parseInt(e.target.value || '1', 10);
+            if (isNaN(v) || v < 1) return;
+            cart[i].quantity = Math.min(v, cart[i].currentStock);
+            recompute();
+        }
+    });
+    $('cartBody').addEventListener('click', e => {
+        const btn = e.target.closest('button[data-rm]');
+        if (!btn) return;
+        cart.splice(+btn.dataset.rm, 1);
+        renderCart();
+    });
+
+    $('discount').addEventListener('input', recompute);
+
+    function payMethod() { return document.querySelector('input[name="payMethod"]:checked').value; }
+    document.querySelectorAll('input[name="payMethod"]').forEach(el => el.addEventListener('change', () => {
+        $('moMoRefBox').style.display = (payMethod() === 'Cash') ? 'none' : 'block';
+    }));
+
+    function newSale() {
+        cart.length = 0;
+        $('discount').value = '0';
+        $('moMoRef').value = '';
+        $('drugSearch').value = '';
+        $('alertHost').innerHTML = '';
+        currentPrescriptionId = null;
+        $('prescriptionBanner').style.display = 'none';
+        // Drop ?prescriptionId=N from URL
+        const u = new URL(window.location);
+        u.searchParams.delete('prescriptionId');
+        window.history.replaceState({}, '', u);
+        renderCart();
+        $('drugSearch').focus();
+    }
+    $('btnNewSale').addEventListener('click', newSale);
+
+    async function loadPrescription(id) {
+        try {
+            const resp = await fetch(`/api/prescriptions/${id}/cart`, { credentials: 'same-origin' });
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                showAlert('warning', err.error || `Cannot load prescription #${id}.`);
+                return;
+            }
+            const data = await resp.json();
+            currentPrescriptionId = data.prescriptionId;
+            cart.length = 0;
+            for (const item of data.items) {
+                cart.push({
+                    drugId: item.drugId, name: item.name, strength: item.strength,
+                    unitPrice: 0, quantity: item.quantity,
+                    requiresPrescription: item.requiresPrescription, currentStock: item.currentStock
+                });
+            }
+            // Fetch real unit prices via search by name (just the loaded drugs)
+            await Promise.all(cart.map(async (line) => {
+                const r = await fetch(`${searchUrl}?q=${encodeURIComponent(line.name)}`, { credentials: 'same-origin' });
+                if (!r.ok) return;
+                const list = await r.json();
+                const match = list.find(d => d.id === line.drugId);
+                if (match) {
+                    line.unitPrice = match.unitPrice || 0;
+                    line.currentStock = match.currentStock;
+                }
+            }));
+            $('prescriptionBanner').style.display = 'block';
+            $('prescriptionBanner').innerHTML = `<strong>Dispensing prescription #${data.prescriptionId}</strong> for <em>${data.customerName}</em> (Dr. ${data.doctorName}). Status will flip to <strong>Dispensed</strong> on completion.`;
+            renderCart();
+        } catch (err) {
+            showAlert('danger', 'Failed to load prescription: ' + err.message);
+        }
+    }
+
+    async function pay() {
+        if (cart.length === 0) return;
+        $('btnPay').disabled = true;
+        $('btnPay').textContent = 'Processing…';
+        try {
+            const body = {
+                prescriptionId: currentPrescriptionId,
+                paymentMethod: payMethod(),
+                mobileMoneyRef: payMethod() === 'Cash' ? null : ($('moMoRef').value || null),
+                discount: parseFloat($('discount').value || '0'),
+                lines: cart.map(l => ({ drugId: l.drugId, quantity: l.quantity }))
+            };
+            const resp = await fetch(checkoutUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': csrfToken },
+                body: JSON.stringify(body)
+            });
+            const data = await resp.json();
+            if (!data.ok) {
+                if (data.errors && data.errors.length) {
+                    showAlert('danger', '<strong>Cannot complete sale:</strong><ul class="mb-0">' +
+                        data.errors.map(e => `<li>${e.drugName}: ${e.reason} (requested ${e.requested}, available ${e.available})</li>`).join('') +
+                        '</ul>');
+                } else {
+                    showAlert('danger', data.error || 'Sale failed.');
+                }
+            } else {
+                showAlert('success', `Sale complete. Receipt <strong>${data.receiptNumber}</strong> — <a href="${data.receiptUrl}" target="_blank">open PDF</a>.`);
+                window.open(data.receiptUrl, '_blank');
+                newSale();
+            }
+        } catch (err) {
+            showAlert('danger', 'Network error: ' + err.message);
+        } finally {
+            $('btnPay').disabled = cart.length === 0;
+            $('btnPay').textContent = 'F4: Complete sale';
+        }
+    }
+    $('btnPay').addEventListener('click', pay);
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'F2') { e.preventDefault(); newSale(); }
+        if (e.key === 'F4') { e.preventDefault(); if (!$('btnPay').disabled) pay(); }
+    });
+
+    renderCart();
+
+    // Auto-load prescription if ?prescriptionId=N
+    const params = new URLSearchParams(window.location.search);
+    const prxId = params.get('prescriptionId');
+    if (prxId) loadPrescription(parseInt(prxId, 10));
+})();
+</script>
+}

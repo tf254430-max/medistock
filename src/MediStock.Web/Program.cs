@@ -9,7 +9,10 @@ using MediStock.Web.Middleware;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using Serilog;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 // Pin the working directory to the repo root (where MediStock.sln lives)
 // so data/, logs/, and other relative paths resolve consistently regardless
@@ -45,6 +48,12 @@ builder.Services.ConfigureApplicationCookie(o =>
 builder.Services.AddControllersWithViews(o =>
 {
     o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+})
+.AddJsonOptions(o =>
+{
+    o.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    o.JsonSerializerOptions.Converters.Add(
+        new System.Text.Json.Serialization.JsonStringEnumConverter());
 });
 
 builder.Services.AddRazorPages();
@@ -57,6 +66,11 @@ builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IDrugService, DrugService>();
 builder.Services.AddScoped<IBatchService, BatchService>();
 builder.Services.AddScoped<IInventoryAlertService, InventoryAlertService>();
+builder.Services.AddScoped<IReceiptPdfService, ReceiptPdfService>();
+builder.Services.AddScoped<ISaleService, SaleService>();
+builder.Services.AddSingleton<IReceiptNumberGenerator, SqliteReceiptNumberGenerator>();
+
+builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();

@@ -1,0 +1,90 @@
+@model MediStock.Web.Models.InventoryListViewModel<MediStock.Application.Dtos.SaleListItemDto>
+@{
+    ViewData["Title"] = "Sales";
+    ViewData["Page"] = Model.Page.Page;
+    ViewData["TotalPages"] = Model.Page.TotalPages;
+    ViewData["TotalCount"] = Model.Page.TotalCount;
+    ViewData["Search"] = Model.Search;
+    ViewData["Sort"] = Model.Sort;
+    ViewData["Descending"] = Model.Descending;
+
+    string SortLink(string field)
+    {
+        var nextDesc = Model.Sort == field && !Model.Descending;
+        return Url.Action("Index", new { search = Model.Search, sort = field, desc = nextDesc, page = 1 })!;
+    }
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Sales</h1>
+    <a class="btn btn-primary" asp-action="Till">Open till</a>
+</div>
+
+<partial name="_Toasts" />
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-6">
+        <input type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search by receipt #, cashier, or customer…" />
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-secondary" type="submit">Search</button>
+        @if (!string.IsNullOrEmpty(Model.Search))
+        {
+            <a class="btn btn-link" asp-action="Index">Clear</a>
+        }
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th><a href="@SortLink("receipt")" class="text-dark text-decoration-none">Receipt #</a></th>
+                    <th><a href="@SortLink("date")" class="text-dark text-decoration-none">Date @(Model.Sort == "date" || Model.Sort is null ? (Model.Descending ? "↓" : "↑") : "")</a></th>
+                    <th>Cashier</th>
+                    <th>Customer</th>
+                    <th>Payment</th>
+                    <th class="text-end">Items</th>
+                    <th class="text-end"><a href="@SortLink("total")" class="text-dark text-decoration-none">Total (UGX)</a></th>
+                    <th>Status</th>
+                    <th class="text-end" style="width:160px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Page.Items)
+                {
+                    <tr class="@(s.IsVoided ? "text-muted" : "")">
+                        <td><strong>@s.ReceiptNumber</strong></td>
+                        <td>@s.CompletedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@s.CashierName</td>
+                        <td>@(s.CustomerName ?? "Walk-in")</td>
+                        <td>@s.PaymentMethod</td>
+                        <td class="text-end">@s.LineCount</td>
+                        <td class="text-end @(s.IsVoided ? "text-decoration-line-through" : "")">@s.Total.ToString("N0")</td>
+                        <td>
+                            @if (s.IsVoided)
+                            { <span class="badge bg-danger-subtle text-danger">Voided</span> }
+                            else
+                            { <span class="badge bg-success-subtle text-success">Completed</span> }
+                        </td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-secondary" asp-action="Details" asp-route-id="@s.Id">View</a>
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Receipt" asp-route-id="@s.Id" target="_blank">PDF</a>
+                            @if (s.CanVoid)
+                            {
+                                <a class="btn btn-sm btn-outline-danger" asp-action="Void" asp-route-id="@s.Id">Void</a>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Page.Items.Any())
+                {
+                    <tr><td colspan="9" class="text-center text-muted py-4">No sales yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<partial name="_Pager" />

@@ -82,20 +82,18 @@
             @if (canSee("prescriptions"))
             {
                 <li class="nav-item mt-2">
-                    <span class="nav-link text-muted disabled" title="Available in Phase 4">
+                    <a class="nav-link @CurrentClass("Prescriptions") text-dark" asp-controller="Prescriptions" asp-action="Index">
                         <span class="me-2">⊳</span> Prescriptions
-                        <span class="badge bg-secondary ms-1">soon</span>
-                    </span>
+                    </a>
                 </li>
             }
 
             @if (canSee("customers"))
             {
                 <li class="nav-item">
-                    <span class="nav-link text-muted disabled" title="Available in Phase 4">
+                    <a class="nav-link @CurrentClass("Customers") text-dark" asp-controller="Customers" asp-action="Index">
                         <span class="me-2">☺</span> Customers
-                        <span class="badge bg-secondary ms-1">soon</span>
-                    </span>
+                    </a>
                 </li>
             }
 

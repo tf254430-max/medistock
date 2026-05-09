@@ -1,0 +1,105 @@
+@model MediStock.Web.Models.PrescriptionFormViewModel
+@{ ViewData["Title"] = "New prescription"; }
+
+<h1 class="h4 mb-3">New prescription</h1>
+
+<form method="post" asp-action="Create" class="card shadow-sm">
+    <div class="card-body">
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="CustomerId" class="form-label">Customer</label>
+                <select asp-for="CustomerId" class="form-select" required
+                        asp-items="@(new SelectList(Model.Customers, "Id", "FullName"))">
+                    <option value="">— select customer —</option>
+                </select>
+                <span asp-validation-for="CustomerId" class="text-danger"></span>
+                <small class="form-text text-muted">
+                    No customer? <a asp-controller="Customers" asp-action="Create">Create one</a>.
+                </small>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="DoctorName" class="form-label">Doctor</label>
+                <input asp-for="DoctorName" class="form-control" required />
+                <span asp-validation-for="DoctorName" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="IssuedDate" class="form-label">Issued date</label>
+                <input asp-for="IssuedDate" type="date" class="form-control" />
+                <span asp-validation-for="IssuedDate" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Notes" class="form-label">Notes (optional)</label>
+                <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+
+        <hr />
+        <h2 class="h6">Lines</h2>
+
+        <table class="table" id="linesTable">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:50%">Drug</th>
+                    <th style="width:15%">Quantity</th>
+                    <th>Dosage instructions</th>
+                    <th style="width:60px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Items.Count; i++)
+                {
+                    <tr>
+                        <td>
+                            <select name="Items[@i].DrugId" class="form-select"
+                                    asp-items="@(new SelectList(Model.Drugs, "Id", "Name", Model.Items[i].DrugId))">
+                                <option value="">— select drug —</option>
+                            </select>
+                        </td>
+                        <td><input name="Items[@i].Quantity" type="number" min="1" value="@Model.Items[i].Quantity" class="form-control" /></td>
+                        <td><input name="Items[@i].Dosage" value="@Model.Items[i].Dosage" class="form-control" placeholder="e.g. 1 tab x 3 daily for 5 days" /></td>
+                        <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">×</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <button type="button" class="btn btn-outline-primary btn-sm" id="addLine">+ Add line</button>
+    </div>
+    <div class="card-footer text-end">
+        <a class="btn btn-link" asp-action="Index">Cancel</a>
+        <button type="submit" class="btn btn-primary">Create prescription</button>
+    </div>
+</form>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+(function () {
+    const drugs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Drugs.Select(d => new { id = d.Id, label = $"{d.Name} {d.Strength}" })));
+    const tbody = document.querySelector('#linesTable tbody');
+
+    function rowHtml(i) {
+        const opts = drugs.map(d => `<option value="${d.id}">${d.label}</option>`).join('');
+        return `<tr>
+            <td><select name="Items[${i}].DrugId" class="form-select"><option value="">— select drug —</option>${opts}</select></td>
+            <td><input name="Items[${i}].Quantity" type="number" min="1" value="1" class="form-control" /></td>
+            <td><input name="Items[${i}].Dosage" class="form-control" placeholder="e.g. 1 tab x 3 daily for 5 days" /></td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">×</button></td>
+        </tr>`;
+    }
+
+    document.getElementById('addLine').addEventListener('click', () => {
+        const i = tbody.querySelectorAll('tr').length;
+        tbody.insertAdjacentHTML('beforeend', rowHtml(i));
+    });
+
+    tbody.addEventListener('click', e => {
+        if (e.target.classList.contains('remove-row')) {
+            e.target.closest('tr').remove();
+        }
+    });
+})();
+</script>
+}

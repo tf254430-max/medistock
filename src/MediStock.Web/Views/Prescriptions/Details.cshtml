@@ -1,0 +1,66 @@
+@model MediStock.Application.Dtos.PrescriptionDetailDto
+@using MediStock.Domain.Enums
+@{
+    ViewData["Title"] = $"Prescription #{Model.Id}";
+    string Badge(PrescriptionStatus s) => s switch
+    {
+        PrescriptionStatus.Draft => "bg-secondary-subtle text-secondary",
+        PrescriptionStatus.Issued => "bg-primary-subtle text-primary",
+        PrescriptionStatus.Dispensed => "bg-success-subtle text-success",
+        PrescriptionStatus.Cancelled => "bg-danger-subtle text-danger",
+        _ => "bg-light"
+    };
+}
+
+<partial name="_Toasts" />
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h1 class="h4 mb-1">Prescription #@Model.Id</h1>
+                <div class="text-muted">
+                    <a asp-controller="Customers" asp-action="Details" asp-route-id="@Model.CustomerId">@Model.CustomerName</a>
+                    &middot; Dr. @Model.DoctorName &middot; @Model.IssuedDate.ToString("yyyy-MM-dd")
+                </div>
+                <span class="badge @Badge(Model.Status) mt-1">@Model.Status</span>
+            </div>
+            <div>
+                @if (Model.Status == PrescriptionStatus.Issued)
+                {
+                    <a class="btn btn-success btn-sm" asp-action="Dispense" asp-route-id="@Model.Id">Dispense at till</a>
+                    <form method="post" asp-action="Cancel" asp-route-id="@Model.Id" class="d-inline"
+                          onsubmit="return confirm('Cancel this prescription?');">
+                        <button class="btn btn-outline-danger btn-sm">Cancel</button>
+                    </form>
+                }
+                <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back</a>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Notes))
+        {
+            <div class="mb-3"><strong>Notes:</strong> <span class="text-muted">@Model.Notes</span></div>
+        }
+
+        <table class="table">
+            <thead class="table-light">
+                <tr><th>Drug</th><th>Strength</th><th class="text-end">Qty</th><th>Dosage</th><th class="text-end">In stock</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var i in Model.Items)
+                {
+                    <tr>
+                        <td>@i.DrugName @if (i.RequiresPrescription) { <span class="badge bg-info-subtle text-info ms-1">Rx</span> }</td>
+                        <td>@i.DrugStrength</td>
+                        <td class="text-end">@i.Quantity</td>
+                        <td>@i.Dosage</td>
+                        <td class="text-end @(i.CurrentStock < i.Quantity ? "text-danger" : "")">@i.CurrentStock</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="text-muted small">Created by @Model.CreatedByName on @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm") UTC</div>
+    </div>
+</div>

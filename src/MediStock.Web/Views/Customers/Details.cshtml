@@ -1,0 +1,28 @@
+@model MediStock.Application.Dtos.CustomerDto
+@{
+    ViewData["Title"] = $"Customer — {Model.FullName}";
+}
+
+<partial name="_Toasts" />
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h1 class="h4 mb-1">@Model.FullName</h1>
+                @if (Model.IsRecurring) { <span class="badge bg-info-subtle text-info">Recurring</span> }
+            </div>
+            <div>
+                <a class="btn btn-primary btn-sm" asp-controller="Prescriptions" asp-action="Create" asp-route-customerId="@Model.Id">+ New prescription</a>
+                <a class="btn btn-outline-primary btn-sm" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+                <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back</a>
+            </div>
+        </div>
+
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">@(Model.Phone ?? "—")</dd>
+            <dt class="col-sm-3">NIN</dt><dd class="col-sm-9">@(Model.NIN ?? "—")</dd>
+            <dt class="col-sm-3">First seen</dt><dd class="col-sm-9">@Model.CreatedAt.ToString("yyyy-MM-dd")</dd>
+        </dl>
+    </div>
+</div>

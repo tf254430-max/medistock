@@ -1,0 +1,94 @@
+@model MediStock.Web.Models.InventoryListViewModel<MediStock.Application.Dtos.PrescriptionListItemDto>
+@using MediStock.Domain.Enums
+@{
+    ViewData["Title"] = "Prescriptions";
+    ViewData["Page"] = Model.Page.Page;
+    ViewData["TotalPages"] = Model.Page.TotalPages;
+    ViewData["TotalCount"] = Model.Page.TotalCount;
+    ViewData["Search"] = Model.Search;
+    ViewData["Sort"] = Model.Sort;
+    ViewData["Descending"] = Model.Descending;
+
+    string StatusBadge(PrescriptionStatus s) => s switch
+    {
+        PrescriptionStatus.Draft => "bg-secondary-subtle text-secondary",
+        PrescriptionStatus.Issued => "bg-primary-subtle text-primary",
+        PrescriptionStatus.Dispensed => "bg-success-subtle text-success",
+        PrescriptionStatus.Cancelled => "bg-danger-subtle text-danger",
+        _ => "bg-light text-muted"
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Prescriptions</h1>
+    <a class="btn btn-primary" asp-action="Create">+ New prescription</a>
+</div>
+
+<partial name="_Toasts" />
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-5">
+        <input type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search by customer or doctor…" />
+    </div>
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">All statuses</option>
+            @foreach (var v in Enum.GetValues<PrescriptionStatus>())
+            {
+                var sel = (ViewBag.StatusFilter is PrescriptionStatus cur && cur == v) ? "selected" : "";
+                @:<option value="@v" @sel>@v</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-secondary" type="submit">Filter</button>
+        @if (!string.IsNullOrEmpty(Model.Search) || ViewBag.StatusFilter != null)
+        {
+            <a class="btn btn-link" asp-action="Index">Clear</a>
+        }
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Customer</th>
+                    <th>Doctor</th>
+                    <th>Issued</th>
+                    <th class="text-end">Items</th>
+                    <th>Status</th>
+                    <th>Created by</th>
+                    <th class="text-end" style="width:200px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Page.Items)
+                {
+                    <tr>
+                        <td>@p.CustomerName</td>
+                        <td>@p.DoctorName</td>
+                        <td>@p.IssuedDate.ToString("yyyy-MM-dd")</td>
+                        <td class="text-end">@p.LineCount</td>
+                        <td><span class="badge @StatusBadge(p.Status)">@p.Status</span></td>
+                        <td class="small text-muted">@p.CreatedByName</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-secondary" asp-action="Details" asp-route-id="@p.Id">View</a>
+                            @if (p.Status == PrescriptionStatus.Issued)
+                            {
+                                <a class="btn btn-sm btn-success" asp-action="Dispense" asp-route-id="@p.Id">Dispense</a>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Page.Items.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">No prescriptions yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<partial name="_Pager" />

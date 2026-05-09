@@ -68,6 +68,8 @@ builder.Services.AddScoped<IBatchService, BatchService>();
 builder.Services.AddScoped<IInventoryAlertService, InventoryAlertService>();
 builder.Services.AddScoped<IReceiptPdfService, ReceiptPdfService>();
 builder.Services.AddScoped<ISaleService, SaleService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
 builder.Services.AddSingleton<IReceiptNumberGenerator, SqliteReceiptNumberGenerator>();
 
 builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");

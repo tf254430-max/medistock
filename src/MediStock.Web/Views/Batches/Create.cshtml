@@ -1,0 +1,62 @@
+@model MediStock.Web.Models.BatchCreateViewModel
+@{
+    ViewData["Title"] = "Stock-in (new batch)";
+}
+
+<h1 class="h4 mb-3">Stock-in: receive a new batch</h1>
+
+<form method="post" asp-action="Create" class="card shadow-sm">
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="DrugId" class="form-label"></label>
+                <select asp-for="DrugId" class="form-select"
+                        asp-items="@(new SelectList(Model.Drugs, "Id", "Name"))">
+                    <option value="">— select drug —</option>
+                </select>
+                <span asp-validation-for="DrugId" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="SupplierId" class="form-label"></label>
+                <select asp-for="SupplierId" class="form-select"
+                        asp-items="@(new SelectList(Model.Suppliers, "Id", "Name"))">
+                    <option value="">— select supplier —</option>
+                </select>
+                <span asp-validation-for="SupplierId" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="BatchNumber" class="form-label"></label>
+                <input asp-for="BatchNumber" class="form-control" />
+                <span asp-validation-for="BatchNumber" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Quantity" class="form-label"></label>
+                <input asp-for="Quantity" class="form-control" type="number" min="1" />
+                <span asp-validation-for="Quantity" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="ExpiryDate" class="form-label"></label>
+                <input asp-for="ExpiryDate" class="form-control" type="date" />
+                <span asp-validation-for="ExpiryDate" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="CostPrice" class="form-label"></label>
+                <input asp-for="CostPrice" class="form-control" type="number" step="0.01" min="0" />
+                <span asp-validation-for="CostPrice" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="SellPrice" class="form-label"></label>
+                <input asp-for="SellPrice" class="form-control" type="number" step="0.01" min="0" />
+                <span asp-validation-for="SellPrice" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a class="btn btn-link" asp-action="Index">Cancel</a>
+        <button type="submit" class="btn btn-primary">Receive batch</button>
+    </div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

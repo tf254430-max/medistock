@@ -1,0 +1,50 @@
+@model MediStock.Application.Dtos.BatchListItemDto
+@{
+    ViewData["Title"] = $"Batch — {Model.BatchNumber}";
+}
+
+<partial name="_Toasts" />
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h1 class="h4 mb-1">Batch @Model.BatchNumber</h1>
+                <div class="text-muted">
+                    <a asp-controller="Drugs" asp-action="Details" asp-route-id="@Model.DrugId">@Model.DrugName</a>
+                </div>
+            </div>
+            <div>
+                <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back</a>
+            </div>
+        </div>
+
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Supplier</dt><dd class="col-sm-9">@Model.SupplierName</dd>
+            <dt class="col-sm-3">Quantity in</dt><dd class="col-sm-9">@Model.QuantityIn</dd>
+            <dt class="col-sm-3">Quantity remaining</dt><dd class="col-sm-9">@Model.QuantityRemaining</dd>
+            <dt class="col-sm-3">Cost price</dt><dd class="col-sm-9">UGX @Model.CostPrice.ToString("N0")</dd>
+            <dt class="col-sm-3">Sell price</dt><dd class="col-sm-9">UGX @Model.SellPrice.ToString("N0")</dd>
+            <dt class="col-sm-3">Received</dt><dd class="col-sm-9">@Model.ReceivedAt.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+            <dt class="col-sm-3">Expires</dt>
+            <dd class="col-sm-9">
+                @Model.ExpiryDate.ToString("yyyy-MM-dd")
+                @if (Model.IsExpired)
+                {
+                    <span class="badge bg-secondary-subtle text-secondary ms-1">Expired</span>
+                }
+                else
+                {
+                    <span class="text-muted">(@Model.DaysUntilExpiry days)</span>
+                }
+            </dd>
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">
+                @if (Model.IsActive)
+                { <span class="badge bg-success-subtle text-success">Active</span> }
+                else
+                { <span class="badge bg-secondary-subtle text-secondary">Inactive</span> }
+            </dd>
+        </dl>
+    </div>
+</div>

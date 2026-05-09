@@ -10,33 +10,36 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/MediStock.Web.styles.css" asp-append-version="true" />
+    <style>
+        .medistock-sidebar { min-width: 220px; max-width: 240px; min-height: calc(100vh - 56px); }
+        .medistock-sidebar .nav-link { padding: 0.4rem 0.75rem; border-radius: 0.25rem; }
+        .medistock-sidebar .nav-link.active { background: #e9ecef; }
+        .medistock-content { flex: 1; padding: 1.25rem 1.5rem; }
+        @@media (max-width: 768px) {
+            .medistock-sidebar { min-width: 100%; max-width: 100%; min-height: auto; }
+        }
+    </style>
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom">
             <div class="container-fluid">
                 <a class="navbar-brand fw-bold" asp-controller="Dashboard" asp-action="Index">MediStock</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav"
-                        aria-controls="topNav" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav"
+                        aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-flex justify-content-between" id="topNav">
-                    <ul class="navbar-nav flex-grow-1">
-                        @if (SignInManager.IsSignedIn(User))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-                            </li>
-                        }
-                    </ul>
+                    <ul class="navbar-nav flex-grow-1"></ul>
                     <partial name="_LoginPartial" />
                 </div>
             </div>
         </nav>
     </header>
 
-    <div class="container">
-        <main role="main" class="pb-3">
+    <div class="d-flex flex-column flex-md-row">
+        <partial name="_Sidebar" />
+        <main role="main" class="medistock-content">
             @RenderBody()
         </main>
     </div>

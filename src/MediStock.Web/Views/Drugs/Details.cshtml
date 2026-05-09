@@ -1,0 +1,103 @@
+@model MediStock.Application.Dtos.DrugDetailDto
+@{
+    ViewData["Title"] = $"Drug — {Model.Name}";
+    var batches = ViewBag.Batches as IReadOnlyList<MediStock.Application.Dtos.BatchListItemDto>
+                  ?? Array.Empty<MediStock.Application.Dtos.BatchListItemDto>();
+
+    string ExpiryClass(MediStock.Application.Dtos.BatchListItemDto b)
+    {
+        var days = b.DaysUntilExpiry;
+        if (b.IsExpired || !b.IsActive) return "bg-secondary-subtle text-secondary";
+        if (days < 30) return "bg-danger-subtle text-danger";
+        if (days < 90) return "bg-warning-subtle text-warning";
+        return "bg-success-subtle text-success";
+    }
+}
+
+<partial name="_Toasts" />
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h1 class="h4 mb-1">@Model.Name @if (Model.RequiresPrescription) { <span class="badge bg-info-subtle text-info">Rx only</span> }</h1>
+                <div class="text-muted">@Model.GenericName</div>
+                @if (Model.IsActive)
+                { <span class="badge bg-success-subtle text-success mt-1">Active</span> }
+                else
+                { <span class="badge bg-secondary-subtle text-secondary mt-1">Inactive</span> }
+            </div>
+            <div>
+                <a class="btn btn-outline-primary btn-sm" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+                <a class="btn btn-primary btn-sm" asp-controller="Batches" asp-action="Create" asp-route-drugId="@Model.Id">+ New batch</a>
+                <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back</a>
+            </div>
+        </div>
+
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Category</dt><dd class="col-sm-9">@Model.CategoryName</dd>
+            <dt class="col-sm-3">NDA registration</dt><dd class="col-sm-9">@(Model.NdaNumber ?? "—")</dd>
+            <dt class="col-sm-3">Form</dt><dd class="col-sm-9">@Model.Form</dd>
+            <dt class="col-sm-3">Strength</dt><dd class="col-sm-9">@Model.Strength</dd>
+            <dt class="col-sm-3">Barcode</dt><dd class="col-sm-9">@(Model.Barcode ?? "—")</dd>
+            <dt class="col-sm-3">Reorder level</dt><dd class="col-sm-9">@Model.ReorderLevel</dd>
+            <dt class="col-sm-3">Current stock</dt>
+            <dd class="col-sm-9">
+                <strong class="@(Model.CurrentStock == 0 ? "text-danger" : Model.CurrentStock <= Model.ReorderLevel ? "text-warning" : "text-success")">
+                    @Model.CurrentStock
+                </strong>
+            </dd>
+        </dl>
+    </div>
+    @if (Model.IsActive)
+    {
+        <div class="card-footer text-end">
+            <form method="post" asp-action="Deactivate" asp-route-id="@Model.Id" class="d-inline"
+                  onsubmit="return confirm('Deactivate this drug? It will be hidden from the till and from new batch entry.');">
+                <button class="btn btn-outline-danger btn-sm">Deactivate</button>
+            </form>
+        </div>
+    }
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header"><strong>Batches (@batches.Count)</strong></div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Batch #</th>
+                    <th>Supplier</th>
+                    <th class="text-end">Qty in</th>
+                    <th class="text-end">Remaining</th>
+                    <th class="text-end">Sell price</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in batches)
+                {
+                    <tr>
+                        <td><a asp-controller="Batches" asp-action="Details" asp-route-id="@b.Id">@b.BatchNumber</a></td>
+                        <td>@b.SupplierName</td>
+                        <td class="text-end">@b.QuantityIn</td>
+                        <td class="text-end">@b.QuantityRemaining</td>
+                        <td class="text-end">@b.SellPrice.ToString("N0")</td>
+                        <td><span class="badge @ExpiryClass(b)">@b.ExpiryDate.ToString("yyyy-MM-dd") (@b.DaysUntilExpiry d)</span></td>
+                        <td>
+                            @if (b.IsActive)
+                            { <span class="badge bg-success-subtle text-success">Active</span> }
+                            else
+                            { <span class="badge bg-secondary-subtle text-secondary">Inactive</span> }
+                        </td>
+                    </tr>
+                }
+                @if (!batches.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-3">No batches recorded for this drug.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,41 @@
+@model MediStock.Application.Dtos.SupplierDto
+@{
+    ViewData["Title"] = $"Supplier — {Model.Name}";
+}
+
+<partial name="_Toasts" />
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h1 class="h4 mb-1">@Model.Name</h1>
+                @if (Model.IsActive)
+                { <span class="badge bg-success-subtle text-success">Active</span> }
+                else
+                { <span class="badge bg-secondary-subtle text-secondary">Inactive</span> }
+            </div>
+            <div>
+                <a class="btn btn-outline-primary btn-sm" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+                <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back</a>
+            </div>
+        </div>
+
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Contact person</dt><dd class="col-sm-9">@(Model.ContactPerson ?? "—")</dd>
+            <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">@(Model.Phone ?? "—")</dd>
+            <dt class="col-sm-3">Email</dt><dd class="col-sm-9">@(Model.Email ?? "—")</dd>
+            <dt class="col-sm-3">Address</dt><dd class="col-sm-9">@(Model.Address ?? "—")</dd>
+            <dt class="col-sm-3">TIN</dt><dd class="col-sm-9">@(Model.Tin ?? "—")</dd>
+        </dl>
+    </div>
+    @if (Model.IsActive)
+    {
+        <div class="card-footer text-end">
+            <form method="post" asp-action="Deactivate" asp-route-id="@Model.Id" class="d-inline"
+                  onsubmit="return confirm('Deactivate this supplier? They will no longer appear in the new-batch form.');">
+                <button class="btn btn-outline-danger btn-sm">Deactivate</button>
+            </form>
+        </div>
+    }
+</div>

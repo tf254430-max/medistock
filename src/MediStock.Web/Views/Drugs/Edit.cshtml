@@ -1,0 +1,68 @@
+@model MediStock.Web.Models.DrugFormViewModel
+@using MediStock.Domain.Enums
+@{
+    ViewData["Title"] = $"Edit — {Model.Name}";
+}
+
+<h1 class="h4 mb-3">Edit drug</h1>
+
+<form method="post" asp-action="Edit" class="card shadow-sm">
+    <input type="hidden" asp-for="Id" />
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="GenericName" class="form-label"></label>
+                <input asp-for="GenericName" class="form-control" />
+                <span asp-validation-for="GenericName" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="CategoryId" class="form-label"></label>
+                <select asp-for="CategoryId" class="form-select"
+                        asp-items="@(new SelectList(Model.Categories, "Id", "Name"))"></select>
+                <span asp-validation-for="CategoryId" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Form" class="form-label"></label>
+                <select asp-for="Form" class="form-select"
+                        asp-items="Html.GetEnumSelectList<DosageForm>()"></select>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Strength" class="form-label"></label>
+                <input asp-for="Strength" class="form-control" />
+                <span asp-validation-for="Strength" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="NdaNumber" class="form-label"></label>
+                <input asp-for="NdaNumber" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Barcode" class="form-label"></label>
+                <input asp-for="Barcode" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label asp-for="ReorderLevel" class="form-label"></label>
+                <input asp-for="ReorderLevel" class="form-control" type="number" min="0" />
+                <span asp-validation-for="ReorderLevel" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <div class="form-check">
+                    <input class="form-check-input" asp-for="RequiresPrescription" />
+                    <label class="form-check-label" asp-for="RequiresPrescription"></label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

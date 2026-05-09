@@ -1,0 +1,21 @@
+@model MediStock.Application.Dtos.CategoryDto
+@{
+    ViewData["Title"] = $"Category — {Model.Name}";
+}
+
+<partial name="_Toasts" />
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h1 class="h4 mb-1">@Model.Name</h1>
+                <div class="text-muted">@(Model.Description ?? "(no description)")</div>
+            </div>
+            <div>
+                <a class="btn btn-outline-primary btn-sm" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+                <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back to list</a>
+            </div>
+        </div>
+    </div>
+</div>

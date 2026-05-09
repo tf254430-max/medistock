@@ -1,5 +1,11 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using MediStock.Application.Interfaces;
+using MediStock.Application.Services;
+using MediStock.Application.Validators;
 using MediStock.Domain.Entities;
 using MediStock.Infrastructure.Data;
+using MediStock.Web.Middleware;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +49,19 @@ builder.Services.AddControllersWithViews(o =>
 
 builder.Services.AddRazorPages();
 
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ISupplierService, SupplierService>();
+builder.Services.AddScoped<IDrugService, DrugService>();
+builder.Services.AddScoped<IBatchService, BatchService>();
+builder.Services.AddScoped<IInventoryAlertService, InventoryAlertService>();
+
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<CategoryCreateDtoValidator>();
+
 builder.Host.UseSerilog((ctx, lc) => lc
     .ReadFrom.Configuration(ctx.Configuration)
     .Enrich.FromLogContext()
@@ -61,6 +80,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<AuditEnricherMiddleware>();
 
 app.MapControllerRoute(
     name: "default",

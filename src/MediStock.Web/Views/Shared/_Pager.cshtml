@@ -1,0 +1,44 @@
+@{
+    int currentPage = (int)(ViewData["Page"] ?? 1);
+    int totalPages = (int)(ViewData["TotalPages"] ?? 0);
+    int totalCount = (int)(ViewData["TotalCount"] ?? 0);
+    string? search = ViewData["Search"] as string;
+    string? sort = ViewData["Sort"] as string;
+    bool desc = (bool)(ViewData["Descending"] ?? false);
+    int? drugId = ViewData["DrugIdFilter"] as int?;
+
+    Dictionary<string, string> RouteValues(int p)
+    {
+        var d = new Dictionary<string, string>
+        {
+            ["page"] = p.ToString(),
+            ["desc"] = desc.ToString().ToLowerInvariant()
+        };
+        if (!string.IsNullOrEmpty(search)) d["search"] = search;
+        if (!string.IsNullOrEmpty(sort)) d["sort"] = sort;
+        if (drugId.HasValue) d["drugId"] = drugId.Value.ToString();
+        return d;
+    }
+
+    bool hasPrev = currentPage > 1;
+    bool hasNext = currentPage < totalPages;
+}
+
+@if (totalCount > 0)
+{
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">
+            @($"Page {currentPage} of {totalPages} — {totalCount} item{(totalCount == 1 ? "" : "s")}")
+        </small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(hasPrev ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index" asp-all-route-data="RouteValues(currentPage - 1)">Previous</a>
+                </li>
+                <li class="page-item @(hasNext ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index" asp-all-route-data="RouteValues(currentPage + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}

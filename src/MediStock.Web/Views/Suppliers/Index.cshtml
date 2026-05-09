@@ -1,0 +1,80 @@
+@model MediStock.Web.Models.InventoryListViewModel<MediStock.Application.Dtos.SupplierListItemDto>
+@{
+    ViewData["Title"] = "Suppliers";
+    ViewData["Page"] = Model.Page.Page;
+    ViewData["TotalPages"] = Model.Page.TotalPages;
+    ViewData["TotalCount"] = Model.Page.TotalCount;
+    ViewData["Search"] = Model.Search;
+    ViewData["Sort"] = Model.Sort;
+    ViewData["Descending"] = Model.Descending;
+
+    string SortLink(string field)
+    {
+        var nextDesc = Model.Sort == field && !Model.Descending;
+        return Url.Action("Index", new { search = Model.Search, sort = field, desc = nextDesc, page = 1 })!;
+    }
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Suppliers</h1>
+    <a class="btn btn-primary" asp-action="Create">+ New supplier</a>
+</div>
+
+<partial name="_Toasts" />
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-6">
+        <input type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search by name, contact, phone or email…" />
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-secondary" type="submit">Search</button>
+        @if (!string.IsNullOrEmpty(Model.Search))
+        {
+            <a class="btn btn-link" asp-action="Index">Clear</a>
+        }
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th><a href="@SortLink("name")" class="text-dark text-decoration-none">Name @(Model.Sort == "name" ? (Model.Descending ? "↓" : "↑") : "")</a></th>
+                    <th><a href="@SortLink("contact")" class="text-dark text-decoration-none">Contact</a></th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th class="text-end">Batches</th>
+                    <th class="text-end" style="width:160px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Page.Items)
+                {
+                    <tr>
+                        <td>@s.Name</td>
+                        <td>@(s.ContactPerson ?? "—")</td>
+                        <td>@(s.Phone ?? "—")</td>
+                        <td>
+                            @if (s.IsActive)
+                            { <span class="badge bg-success-subtle text-success">Active</span> }
+                            else
+                            { <span class="badge bg-secondary-subtle text-secondary">Inactive</span> }
+                        </td>
+                        <td class="text-end">@s.BatchCount</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-secondary" asp-action="Details" asp-route-id="@s.Id">View</a>
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@s.Id">Edit</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Page.Items.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">No suppliers yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<partial name="_Pager" />

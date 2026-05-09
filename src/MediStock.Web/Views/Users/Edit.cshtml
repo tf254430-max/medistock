@@ -1,0 +1,44 @@
+@model MediStock.Web.Models.UserEditViewModel
+@{ ViewData["Title"] = $"Edit — {Model.Email}"; }
+
+<h1 class="h4 mb-3">Edit user</h1>
+
+<form method="post" asp-action="Edit" class="card shadow-sm">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="Email" />
+    <input type="hidden" asp-for="IsActive" />
+    <div class="card-body">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input class="form-control" value="@Model.Email" readonly />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Phone" class="form-label"></label>
+                <input asp-for="Phone" class="form-control" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Role" class="form-label"></label>
+                <select asp-for="Role" class="form-select">
+                    <option>Admin</option>
+                    <option>Pharmacist</option>
+                    <option>Cashier</option>
+                </select>
+                <span asp-validation-for="Role" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

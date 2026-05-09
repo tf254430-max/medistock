@@ -1,0 +1,28 @@
+@model MediStock.Web.Models.UserDeactivateViewModel
+@{ ViewData["Title"] = $"Deactivate — {Model.Email}"; }
+
+<h1 class="h4 mb-3">Deactivate @Model.Email</h1>
+
+<div class="alert alert-warning">
+    Deactivating this user will sign them out and prevent future sign-ins.
+    Their historical actions remain visible in the audit log. Re-enter your admin password to confirm.
+</div>
+
+<form method="post" asp-action="Deactivate" class="card shadow-sm">
+    <input type="hidden" asp-for="UserId" />
+    <input type="hidden" asp-for="Email" />
+    <div class="card-body">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <div class="mb-3">
+            <label asp-for="AdminPassword" class="form-label"></label>
+            <input asp-for="AdminPassword" class="form-control" type="password" autofocus />
+            <span asp-validation-for="AdminPassword" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.UserId">Cancel</a>
+        <button type="submit" class="btn btn-danger">Deactivate user</button>
+    </div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

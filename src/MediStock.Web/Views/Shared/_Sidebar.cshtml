@@ -110,18 +110,15 @@
             {
                 <li class="nav-item mt-2">
                     <div class="text-uppercase text-muted small px-3 mb-1">Admin</div>
-                    <span class="nav-link text-muted disabled" title="Available in Phase 5">
+                    <a class="nav-link @CurrentClass("Users") text-dark" asp-controller="Users" asp-action="Index">
                         <span class="me-2">☻</span> Users
-                        <span class="badge bg-secondary ms-1">soon</span>
-                    </span>
-                    <span class="nav-link text-muted disabled" title="Available in Phase 5">
+                    </a>
+                    <a class="nav-link @CurrentClass("Audit") text-dark" asp-controller="Audit" asp-action="Index">
                         <span class="me-2">∎</span> Audit log
-                        <span class="badge bg-secondary ms-1">soon</span>
-                    </span>
-                    <span class="nav-link text-muted disabled" title="Available in Phase 5">
+                    </a>
+                    <a class="nav-link @CurrentClass("Settings") text-dark" asp-controller="Settings" asp-action="Index">
                         <span class="me-2">⚙</span> Settings
-                        <span class="badge bg-secondary ms-1">soon</span>
-                    </span>
+                    </a>
                 </li>
             }
         </ul>

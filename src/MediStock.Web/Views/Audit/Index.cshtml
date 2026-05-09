@@ -1,0 +1,138 @@
+@model MediStock.Web.Models.AuditIndexViewModel
+@{
+    ViewData["Title"] = "Audit log";
+    ViewData["Page"] = Model.Page.Page;
+    ViewData["TotalPages"] = Model.Page.TotalPages;
+    ViewData["TotalCount"] = Model.Page.TotalCount;
+    ViewData["Search"] = Model.Search;
+
+    string Pretty(string? json)
+    {
+        if (string.IsNullOrEmpty(json)) return "(none)";
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            return System.Text.Json.JsonSerializer.Serialize(doc, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        }
+        catch { return json; }
+    }
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Audit log</h1>
+    <small class="text-muted">@Model.Page.TotalCount total entries</small>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-end">
+    <div class="col-md-3">
+        <label class="form-label small">Search</label>
+        <input type="search" name="search" value="@Model.Search" class="form-control form-control-sm"
+               placeholder="action / entity / json …" />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small">Entity</label>
+        <select name="entityName" class="form-select form-select-sm">
+            <option value="">All</option>
+            @foreach (var en in Model.EntityNames)
+            {
+                var sel = (Model.EntityName == en) ? "selected" : "";
+                @:<option value="@en" @sel>@en</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small">User</label>
+        <select name="userId" class="form-select form-select-sm">
+            <option value="">Any user</option>
+            @foreach (var u in Model.Users)
+            {
+                var sel = (Model.UserId == u.Id) ? "selected" : "";
+                @:<option value="@u.Id" @sel>@u.FullName (@u.Email)</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small">From</label>
+        <input type="date" name="from" value="@(Model.From?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small">To</label>
+        <input type="date" name="to" value="@(Model.To?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+    </div>
+    <div class="col-md-12 mt-2">
+        <button class="btn btn-outline-secondary btn-sm" type="submit">Apply filters</button>
+        <a class="btn btn-link btn-sm" asp-action="Index">Clear</a>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>When (UTC)</th>
+                    <th>User</th>
+                    <th>Entity</th>
+                    <th>ID</th>
+                    <th>Action</th>
+                    <th>IP</th>
+                    <th class="text-end" style="width:60px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model.Page.Items)
+                {
+                    var diffId = $"diff-{a.Id}";
+                    <tr>
+                        <td class="small">@a.OccurredAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td class="small">@(a.UserDisplay ?? a.UserId ?? "(system)")</td>
+                        <td><span class="badge bg-light text-dark border">@a.EntityName</span></td>
+                        <td class="small text-muted">@a.EntityId</td>
+                        <td>
+                            @{
+                                var actionClass = a.Action switch
+                                {
+                                    "Create" => "bg-success-subtle text-success",
+                                    "Update" => "bg-primary-subtle text-primary",
+                                    "Deactivate" or "Cancel" or "Void" => "bg-danger-subtle text-danger",
+                                    "ResetPassword" => "bg-warning-subtle text-warning",
+                                    _ => "bg-secondary-subtle text-secondary"
+                                };
+                            }
+                            <span class="badge @actionClass">@a.Action</span>
+                        </td>
+                        <td class="small text-muted">@(a.IpAddress ?? "—")</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#@diffId" aria-expanded="false">
+                                Diff
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="table-light">
+                        <td colspan="7" class="p-0">
+                            <div class="collapse" id="@diffId">
+                                <div class="row g-0">
+                                    <div class="col-md-6 border-end">
+                                        <div class="px-3 pt-2 small text-muted">Before</div>
+                                        <pre class="small mb-0 px-3 pb-2" style="white-space:pre-wrap; max-height:300px; overflow-y:auto">@Pretty(a.OldValuesJson)</pre>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="px-3 pt-2 small text-muted">After</div>
+                                        <pre class="small mb-0 px-3 pb-2" style="white-space:pre-wrap; max-height:300px; overflow-y:auto">@Pretty(a.NewValuesJson)</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Page.Items.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">No audit entries match the filters.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<partial name="_Pager" />

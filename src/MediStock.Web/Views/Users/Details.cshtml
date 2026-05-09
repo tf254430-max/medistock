@@ -1,0 +1,40 @@
+@model MediStock.Application.Dtos.UserDetailDto
+@{ ViewData["Title"] = $"User — {Model.Email}"; }
+
+<partial name="_Toasts" />
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h1 class="h4 mb-1">@Model.FullName</h1>
+                <div class="text-muted">@Model.Email</div>
+                <span class="badge bg-info-subtle text-info mt-1">@Model.Role</span>
+                @if (Model.IsActive)
+                { <span class="badge bg-success-subtle text-success ms-1">Active</span> }
+                else
+                { <span class="badge bg-secondary-subtle text-secondary ms-1">Inactive</span> }
+            </div>
+            <div>
+                <a class="btn btn-outline-primary btn-sm" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+                <a class="btn btn-outline-warning btn-sm" asp-action="ResetPassword" asp-route-id="@Model.Id">Reset password</a>
+                @if (Model.IsActive)
+                {
+                    <a class="btn btn-outline-danger btn-sm" asp-action="Deactivate" asp-route-id="@Model.Id">Deactivate</a>
+                }
+                else
+                {
+                    <form method="post" asp-action="Reactivate" asp-route-id="@Model.Id" class="d-inline">
+                        <button class="btn btn-outline-success btn-sm">Reactivate</button>
+                    </form>
+                }
+                <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back</a>
+            </div>
+        </div>
+
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">@(Model.Phone ?? "—")</dd>
+            <dt class="col-sm-3">Created</dt><dd class="col-sm-9">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+        </dl>
+    </div>
+</div>

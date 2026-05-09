@@ -1,0 +1,86 @@
+using MediStock.Domain.Entities;
+using MediStock.Infrastructure.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
+
+// Pin the working directory to the repo root (where MediStock.sln lives)
+// so data/, logs/, and other relative paths resolve consistently regardless
+// of whether `dotnet run` was invoked from the repo root or a subfolder.
+PinWorkingDirectoryToRepoRoot();
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<AppDbContext>(o =>
+    o.UseSqlite(builder.Configuration.GetConnectionString("Default")
+                ?? "Data Source=data/medistock.db"));
+
+builder.Services
+    .AddIdentity<AppUser, IdentityRole>(o =>
+    {
+        o.Password.RequiredLength = 8;
+        o.Password.RequireNonAlphanumeric = true;
+        o.Lockout.MaxFailedAccessAttempts = 5;
+        o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        o.SignIn.RequireConfirmedAccount = false;
+    })
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders()
+    .AddDefaultUI();
+
+builder.Services.ConfigureApplicationCookie(o =>
+{
+    o.LoginPath = "/Identity/Account/Login";
+    o.LogoutPath = "/Identity/Account/Logout";
+    o.AccessDeniedPath = "/Identity/Account/AccessDenied";
+});
+
+builder.Services.AddControllersWithViews(o =>
+{
+    o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+
+builder.Services.AddRazorPages();
+
+builder.Host.UseSerilog((ctx, lc) => lc
+    .ReadFrom.Configuration(ctx.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("logs/medistock-.log", rollingInterval: RollingInterval.Day));
+
+var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+app.MapRazorPages();
+
+await app.MigrateAndSeedAsync();
+app.Run();
+
+static void PinWorkingDirectoryToRepoRoot()
+{
+    var dir = new DirectoryInfo(AppContext.BaseDirectory);
+    while (dir is not null
+        && !File.Exists(Path.Combine(dir.FullName, "MediStock.sln"))
+        && !File.Exists(Path.Combine(dir.FullName, "MediStock.slnx")))
+    {
+        dir = dir.Parent;
+    }
+    if (dir is not null) Directory.SetCurrentDirectory(dir.FullName);
+}
+
+// Marker so WebApplicationFactory<Program> can find this assembly's entry point.
+public partial class Program { }

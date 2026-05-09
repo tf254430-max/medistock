@@ -1,0 +1,70 @@
+# Visual Studio / .NET
+bin/
+obj/
+out/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild/
+[Bb]uildCache/
+[Pp]ublish/
+publish/
+.vs/
+*.user
+*.userprefs
+*.suo
+*.userosscache
+*.sln.docstates
+*.svclog
+*.dbmdl
+*.dbproj.schemaview
+*.psd
+*.lcd
+*.pidb
+*.svclog
+*.scc
+
+# .NET Core / .NET 5+
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.binlog
+
+# Test results / coverage
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.coverage
+*.coveragexml
+coverage/
+*.opencover.xml
+*.cobertura.xml
+*.trx
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# Application data — never commit the SQLite database, generated PDFs, or logs
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/receipts/
+logs/
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# User secrets / env / per-environment config
+*.env
+secrets.json
+appsettings.Development.json
+appsettings.*.local.json
+
+# Local IDE / tooling scratch
+.claude/

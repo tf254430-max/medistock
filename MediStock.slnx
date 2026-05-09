@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MediStock.Application/MediStock.Application.csproj" />
+    <Project Path="src/MediStock.Domain/MediStock.Domain.csproj" />
+    <Project Path="src/MediStock.Infrastructure/MediStock.Infrastructure.csproj" />
+    <Project Path="src/MediStock.Web/MediStock.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MediStock.IntegrationTests/MediStock.IntegrationTests.csproj" />
+    <Project Path="tests/MediStock.UnitTests/MediStock.UnitTests.csproj" />
+  </Folder>
+</Solution>

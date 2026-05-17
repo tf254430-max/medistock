@@ -35,7 +35,19 @@ public static class StartupExtensions
     private static async Task SeedUserAsync(
         UserManager<AppUser> mgr, string email, string password, string role, string fullName)
     {
-        if (await mgr.FindByEmailAsync(email) is not null) return;
+        var existing = await mgr.FindByEmailAsync(email);
+        if (existing is not null)
+        {
+            // Ensure the seeded password is always usable on a re-run, even if
+            // the password policy changed after the user was first created.
+            var token = await mgr.GeneratePasswordResetTokenAsync(existing);
+            var reset = await mgr.ResetPasswordAsync(existing, token, password);
+            if (!reset.Succeeded)
+                Console.Error.WriteLine($"[seed] reset failed for {email}: {string.Join(", ", reset.Errors.Select(e => e.Description))}");
+            if (!await mgr.IsInRoleAsync(existing, role))
+                await mgr.AddToRoleAsync(existing, role);
+            return;
+        }
 
         var u = new AppUser
         {
@@ -45,7 +57,12 @@ public static class StartupExtensions
             FullName = fullName,
             IsActive = true
         };
-        await mgr.CreateAsync(u, password);
+        var created = await mgr.CreateAsync(u, password);
+        if (!created.Succeeded)
+        {
+            Console.Error.WriteLine($"[seed] create failed for {email}: {string.Join(", ", created.Errors.Select(e => e.Description))}");
+            return;
+        }
         await mgr.AddToRoleAsync(u, role);
     }
 }

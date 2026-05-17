@@ -7,14 +7,32 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - MediStock</title>
+    <script>
+        // Apply saved theme before paint to avoid a flash of the wrong colour scheme.
+        (function () {
+            try {
+                var t = localStorage.getItem('medistock-theme');
+                if (t !== 'light' && t !== 'dark') {
+                    t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-bs-theme', t);
+            } catch (e) {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/MediStock.Web.styles.css" asp-append-version="true" />
     <style>
         .medistock-sidebar { min-width: 220px; max-width: 240px; min-height: calc(100vh - 56px); }
         .medistock-sidebar .nav-link { padding: 0.4rem 0.75rem; border-radius: 0.25rem; }
-        .medistock-sidebar .nav-link.active { background: #e9ecef; }
+        .medistock-sidebar .nav-link.active { background: var(--bs-secondary-bg); }
         .medistock-content { flex: 1; padding: 1.25rem 1.5rem; }
+        .theme-toggle-btn { border: none; background: transparent; font-size: 1.15rem; line-height: 1; padding: 0.25rem 0.5rem; cursor: pointer; color: var(--bs-body-color); }
+        .theme-toggle-btn:hover { background: var(--bs-secondary-bg); border-radius: 0.25rem; }
+        [data-bs-theme="light"] .theme-icon-dark { display: none; }
+        [data-bs-theme="dark"] .theme-icon-light { display: none; }
         @@media (max-width: 768px) {
             .medistock-sidebar { min-width: 100%; max-width: 100%; min-height: auto; }
         }
@@ -22,7 +40,7 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom">
+        <nav class="navbar navbar-expand-sm bg-body-tertiary border-bottom">
             <div class="container-fluid">
                 <a class="navbar-brand fw-bold" asp-controller="Dashboard" asp-action="Index">MediStock</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav"
@@ -32,6 +50,12 @@
                 <div class="navbar-collapse collapse d-sm-flex justify-content-between" id="topNav">
                     <ul class="navbar-nav flex-grow-1"></ul>
                     <ul class="navbar-nav d-flex align-items-center">
+                        <li class="nav-item me-2">
+                            <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Toggle colour theme" title="Toggle light / dark theme">
+                                <span class="theme-icon-light" aria-hidden="true">&#9788;</span>
+                                <span class="theme-icon-dark" aria-hidden="true">&#9789;</span>
+                            </button>
+                        </li>
                         @if (SignInManager.IsSignedIn(User))
                         {
                             <partial name="_BellIcon" />
@@ -59,6 +83,18 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            var btn = document.getElementById('themeToggle');
+            if (!btn) return;
+            btn.addEventListener('click', function () {
+                var current = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light';
+                var next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-bs-theme', next);
+                try { localStorage.setItem('medistock-theme', next); } catch (e) { }
+            });
+        })();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

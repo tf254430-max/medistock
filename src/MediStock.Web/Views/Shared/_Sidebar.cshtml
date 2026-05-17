@@ -29,10 +29,10 @@
 
 @if (SignInManager.IsSignedIn(User))
 {
-    <aside class="medistock-sidebar bg-light border-end p-3">
+    <aside class="medistock-sidebar bg-body-tertiary border-end p-3">
         <ul class="nav nav-pills flex-column">
             <li class="nav-item">
-                <a class="nav-link @CurrentClass("Dashboard") text-dark" asp-controller="Dashboard" asp-action="Index">
+                <a class="nav-link @CurrentClass("Dashboard") text-body" asp-controller="Dashboard" asp-action="Index">
                     <span class="me-2">⌂</span> Dashboard
                 </a>
             </li>
@@ -40,12 +40,12 @@
             @if (canSee("till"))
             {
                 <li class="nav-item">
-                    <a class="nav-link @CurrentClass("Sales") text-dark" asp-controller="Sales" asp-action="Till">
+                    <a class="nav-link @CurrentClass("Sales") text-body" asp-controller="Sales" asp-action="Till">
                         <span class="me-2">$</span> Till (POS)
                     </a>
                     @if (isAdmin)
                     {
-                        <a class="nav-link text-dark ps-4 small" asp-controller="Sales" asp-action="Index">
+                        <a class="nav-link text-body ps-4 small" asp-controller="Sales" asp-action="Index">
                             All sales
                         </a>
                     }
@@ -64,16 +64,16 @@
                             </span>
                         }
                     </div>
-                    <a class="nav-link @CurrentClass("Drugs") text-dark" asp-controller="Drugs" asp-action="Index">
+                    <a class="nav-link @CurrentClass("Drugs") text-body" asp-controller="Drugs" asp-action="Index">
                         <span class="me-2">℞</span> Drugs
                     </a>
-                    <a class="nav-link @CurrentClass("Categories") text-dark" asp-controller="Categories" asp-action="Index">
+                    <a class="nav-link @CurrentClass("Categories") text-body" asp-controller="Categories" asp-action="Index">
                         <span class="me-2">▦</span> Categories
                     </a>
-                    <a class="nav-link @CurrentClass("Suppliers") text-dark" asp-controller="Suppliers" asp-action="Index">
+                    <a class="nav-link @CurrentClass("Suppliers") text-body" asp-controller="Suppliers" asp-action="Index">
                         <span class="me-2">⚯</span> Suppliers
                     </a>
-                    <a class="nav-link @CurrentClass("Batches") text-dark" asp-controller="Batches" asp-action="Index">
+                    <a class="nav-link @CurrentClass("Batches") text-body" asp-controller="Batches" asp-action="Index">
                         <span class="me-2">▤</span> Batches
                     </a>
                 </li>
@@ -82,7 +82,7 @@
             @if (canSee("prescriptions"))
             {
                 <li class="nav-item mt-2">
-                    <a class="nav-link @CurrentClass("Prescriptions") text-dark" asp-controller="Prescriptions" asp-action="Index">
+                    <a class="nav-link @CurrentClass("Prescriptions") text-body" asp-controller="Prescriptions" asp-action="Index">
                         <span class="me-2">⊳</span> Prescriptions
                     </a>
                 </li>
@@ -91,7 +91,7 @@
             @if (canSee("customers"))
             {
                 <li class="nav-item">
-                    <a class="nav-link @CurrentClass("Customers") text-dark" asp-controller="Customers" asp-action="Index">
+                    <a class="nav-link @CurrentClass("Customers") text-body" asp-controller="Customers" asp-action="Index">
                         <span class="me-2">☺</span> Customers
                     </a>
                 </li>
@@ -100,7 +100,7 @@
             @if (canSee("reports"))
             {
                 <li class="nav-item">
-                    <a class="nav-link @CurrentClass("Reports") text-dark" asp-controller="Reports" asp-action="Index">
+                    <a class="nav-link @CurrentClass("Reports") text-body" asp-controller="Reports" asp-action="Index">
                         <span class="me-2">⌬</span> Reports
                     </a>
                 </li>
@@ -110,13 +110,13 @@
             {
                 <li class="nav-item mt-2">
                     <div class="text-uppercase text-muted small px-3 mb-1">Admin</div>
-                    <a class="nav-link @CurrentClass("Users") text-dark" asp-controller="Users" asp-action="Index">
+                    <a class="nav-link @CurrentClass("Users") text-body" asp-controller="Users" asp-action="Index">
                         <span class="me-2">☻</span> Users
                     </a>
-                    <a class="nav-link @CurrentClass("Audit") text-dark" asp-controller="Audit" asp-action="Index">
+                    <a class="nav-link @CurrentClass("Audit") text-body" asp-controller="Audit" asp-action="Index">
                         <span class="me-2">∎</span> Audit log
                     </a>
-                    <a class="nav-link @CurrentClass("Settings") text-dark" asp-controller="Settings" asp-action="Index">
+                    <a class="nav-link @CurrentClass("Settings") text-body" asp-controller="Settings" asp-action="Index">
                         <span class="me-2">⚙</span> Settings
                     </a>
                 </li>
